@@ -1,81 +1,78 @@
-# Controle de Lotes — como colocar no ar
+# Controle de Lotes
 
-São 3 partes, feitas uma vez só: a **planilha** (onde os dados ficam), o **app da Web** (a ponte entre a planilha e o painel) e o **GitHub Pages** (onde o painel fica hospedado). Leva uns 15 minutos.
+Painel para controlar lotes de operações, com login de **administrador** e **operadores**. O painel fica no GitHub Pages e os dados ficam numa planilha do Google.
+
+- **Operador:** tem caixa próprio, cria lotes, lança recolhimentos e novas rodadas, e vê só os dados dele. Não exclui nada.
+- **Administrador:** vê todos os operadores, um por um ou somados. Cadastra, edita e desativa operadores, lança aportes e retiradas, exclui lançamentos.
 
 Arquivos:
-- `index.html` — o painel (vai para o GitHub)
+- `index.html` — o painel
 - `Codigo.gs` — o código da planilha (vai no Apps Script)
 
 ---
 
-## Parte 1 — Planilha
+## Atualizar a partir da versão sem login
 
-1. No Google Drive, crie uma **planilha em branco** e dê o nome **Controle de Lotes**.
-2. Na planilha, abra **Extensões → Apps Script**.
-3. Apague todo o código que aparece, cole o conteúdo do arquivo `Codigo.gs` e clique em **Salvar** (ícone de disquete).
-4. Volte para a aba da planilha e **recarregue a página** (F5). Vai aparecer o menu **Controle de Lotes** no topo (pode levar alguns segundos).
-5. Clique em **Controle de Lotes → Preparar planilha**.
-   - O Google vai pedir autorização. Escolha sua conta → **Avançado** → **Acessar Controle de Lotes (não seguro)** → **Permitir**. Esse aviso aparece porque o código é seu, e não de um app publicado; é normal.
-   - Depois de autorizar, clique de novo em **Preparar planilha** se a mensagem não aparecer.
-6. Vai aparecer a sua **chave de acesso**. Copie e guarde. Se perder, use **Controle de Lotes → Mostrar chave de acesso**.
+1. Na planilha, abra **Extensões → Apps Script**, apague todo o código, cole o conteúdo novo do `Codigo.gs` e clique em **Salvar**.
+2. Clique em **Deploy → Manage deployments**, selecione **Controle de Lotes**, clique no **lápis**, escolha **Version: New version** e clique em **Deploy**. O link do app continua o mesmo.
+3. Abra o painel. Vai aparecer a tela **Criar administrador**. Preencha seu nome, usuário, senha e a **chave da planilha** (menu Controle de Lotes → Mostrar chave de acesso).
+4. Pronto: os lançamentos que você já tinha passam a ser seus, como administrador.
 
-A planilha fica com 4 abas:
-- **Resumo**: saldo em caixa, investido, recolhido, resultado e retorno, tudo por fórmula.
-- **Lançamentos**: cada lançamento é uma linha (data, lote, tipo, quantidade, valor, situação).
-- **Lotes**: cada lote, com investido, recolhido, a recolher, resultado e situação calculados.
-- **Config**: capital inicial e data de início.
+Opcional: na planilha, rode **Controle de Lotes → Preparar planilha** de novo para esconder as colunas técnicas (IDs e senhas).
 
-Não edite as colunas de ID (ficam ocultas) nem as colunas calculadas. Para lançar, use o painel.
+## Instalar do zero
 
-## Parte 2 — App da Web (a ponte)
+### 1. Planilha
+1. Crie uma planilha em branco (sheets.new) chamada **Controle de Lotes**.
+2. **Extensões → Apps Script**: apague o código, cole o `Codigo.gs` e clique em **Salvar**.
+3. Recarregue a planilha e use **Controle de Lotes → Preparar planilha**. Autorize: sua conta → **Avançado** → **Acessar (não seguro)** → **Permitir**. Isso aparece porque o código é seu, e não um app publicado.
+4. Anote a **chave** que aparecer. Ela só é usada para criar o administrador.
 
-1. No Apps Script, clique em **Implantar → Nova implantação**.
-2. Na engrenagem ao lado de "Selecione o tipo", escolha **App da Web**.
-3. Preencha:
-   - Descrição: `Controle de Lotes`
-   - **Executar como: Eu**
-   - **Quem pode acessar: Qualquer pessoa**
-4. Clique em **Implantar** e copie o **URL do app da Web** (termina em `/exec`).
+### 2. App da Web
+1. No Apps Script, clique em **Deploy → New deployment**.
+2. Na engrenagem pequena ao lado de **Select type**, escolha **Web app**.
+3. Preencha **Execute as: Me** e **Who has access: Anyone**. Se "Anyone" não aparecer, troque antes o "Execute as" para **Me**.
+4. Clique em **Deploy** e copie o **Web app URL** (termina em `/exec`).
 
-"Qualquer pessoa" é necessário para o painel conseguir falar com a planilha. Sem a sua chave, ninguém lê nem grava nada.
+### 3. GitHub Pages
+Em **Settings → Pages**, escolha a branch **main** e a pasta **/ (root)** e clique em **Save**. O painel fica em `https://SEU-USUARIO.github.io/controle-lotes/`.
 
-## Parte 3 — GitHub Pages
-
-1. No GitHub, crie um repositório novo, por exemplo `controle-lotes`, marcado como **Public**.
-2. Clique em **Add file → Upload files**, envie o `index.html` e confirme em **Commit changes**.
-3. Vá em **Settings → Pages**. Em "Branch", escolha **main** e a pasta **/ (root)** e clique em **Save**.
-4. Em 1 ou 2 minutos o painel fica no ar em: `https://SEU-USUARIO.github.io/controle-lotes/`
-
-O repositório público mostra só o código do painel. Os seus dados ficam na planilha, e a chave fica guardada só no seu aparelho.
-
-## Parte 4 — Conectar
-
-1. Abra o link do painel.
-2. Cole o **URL do app da Web** e a **chave de acesso** e clique em **Conectar**.
-3. Informe o **capital inicial** e a **data de início**. Pronto.
-
-Faça a conexão uma vez em cada aparelho (celular e computador). No celular, use "Adicionar à tela inicial" para abrir como um app.
+### 4. Primeiro acesso
+Abra o painel, cole o link do app, e crie o administrador com a chave.
 
 ---
 
-## Uso do dia a dia
+## Cadastrar operadores
 
-- **Novo lançamento**: cria um lote com o nome que você escolher (o nome não pode repetir).
-- **Lançar em lote existente**: escolha o lote e lance um **Recolhimento** (já recebido ou previsto) ou uma **Nova rodada** no mesmo lote.
-- **Caixa**: aportes e retiradas que não são de nenhum lote.
-- **Recebido**: num recolhimento previsto, marca que o dinheiro entrou.
-- **Atualizar**: puxa os dados mais recentes da planilha. O painel também atualiza sozinho a cada minuto e quando você volta para ele.
-- **Ajustes**: muda o capital inicial, abre a planilha, exporta CSV ou troca a conexão.
+1. No painel, abra a aba **Operadores** e clique em **Novo operador**.
+2. Informe o nome, o usuário (login), a senha inicial e o capital inicial dele.
+3. O painel mostra uma mensagem pronta com o **link de acesso**, o usuário e a senha. Copie e envie para o operador.
+4. O operador abre o link, entra e, de preferência, troca a senha em **Ajustes → Trocar senha**.
+
+O **link de acesso** já leva o endereço da planilha, então o operador não precisa colar nada além do usuário e da senha. Sozinho, o link não dá acesso a nenhum dado.
+
+## No dia a dia
+
+- **Visão** (só admin): escolha "Todos os operadores" ou um operador específico. Os números, o gráfico, os lotes e o histórico seguem a visão escolhida.
+- **Aba Operadores** (só admin): mostra capital, investido, recolhido, resultado, saldo e lotes em aberto de cada um, com o total. Toque numa linha para abrir o painel daquele operador.
+- **Novo lançamento:** cria um lote. O admin escolhe para qual operador. O nome do lote não pode repetir para o mesmo operador.
+- **Lançar em lote existente:** recolhimento (já recebido ou previsto) ou nova rodada no mesmo lote.
+- **Caixa** (só admin): aporte ou retirada no caixa de um operador.
+- **Editar operador** (só admin): muda o nome, o capital e o início, redefine a senha, transforma em admin ou desativa. Desativar bloqueia o login na hora e mantém os lançamentos.
+
+## Segurança
+
+- As senhas ficam guardadas na planilha só em forma protegida (hash), nunca em texto.
+- Depois de 5 senhas erradas, o usuário fica bloqueado por 10 minutos.
+- A sessão dura 30 dias em cada aparelho. Trocar a senha encerra as sessões antigas daquela pessoa.
+- **Esqueceu a senha?** O admin redefine em Operadores → Editar → Nova senha. Se for a senha do próprio admin, use na planilha **Controle de Lotes → Redefinir senha de um usuário**.
+- **Desconectar todo mundo:** na planilha, use **Controle de Lotes → Gerar nova chave**.
 
 ## Se algo der errado
 
 | Mensagem | O que fazer |
 |---|---|
-| Chave de acesso incorreta | Confira a chave em Controle de Lotes → Mostrar chave de acesso. |
-| A planilha respondeu de um jeito inesperado | O link precisa terminar em `/exec`, e o acesso tem que estar como **Qualquer pessoa**. |
-| A planilha ainda não foi preparada | Rode Controle de Lotes → Preparar planilha. |
-| Sem conexão com a planilha | Verifique a internet; tente **Atualizar**. |
-
-**Se precisar trocar o código da planilha** (uma versão nova do `Codigo.gs`): cole o código novo, salve e vá em **Implantar → Gerenciar implantações → lápis (editar) → Versão: Nova versão → Implantar**. Assim o link continua o mesmo e não precisa reconectar os aparelhos.
-
-**Se a chave vazar**: use Controle de Lotes → Gerar nova chave e reconecte seus aparelhos com ela.
+| Sem conexão com a planilha | Confira a internet. No app da Web, "Who has access" precisa estar como **Anyone**. |
+| A planilha respondeu de um jeito inesperado | O link precisa terminar em `/exec`. |
+| Chave de acesso incorreta | Pegue a chave em Controle de Lotes → Mostrar chave de acesso. |
+| Sua sessão expirou | Entre de novo com usuário e senha. |

@@ -7,6 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Lotes">
+<meta name="robots" content="noindex">
 <title>Controle de Lotes</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231F4FD8'/%3E%3Cpath d='M7 22l6-6 4 4 8-9' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -193,10 +194,44 @@ details.opt[open] summary{margin-bottom:10px}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(24px + env(safe-area-inset-bottom,0px));z-index:60;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;box-shadow:var(--shadow);max-width:calc(100% - 32px)}
 @media (max-width:720px){.toast{bottom:calc(80px + env(safe-area-inset-bottom,0px))}}
 @media (prefers-reduced-motion:no-preference){.sheet{animation:up .18s ease-out}@keyframes up{from{transform:translateY(12px);opacity:.6}}}
+/* login */
+.auth{min-height:100vh;display:grid;place-items:center;padding-block:32px}
+.auth-card{width:100%;max-width:420px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:14px;box-shadow:var(--shadow)}
+.auth-card h1{font-family:var(--f-display);font-weight:800;font-size:24px;margin:0;letter-spacing:-.02em}
+.auth-card p{margin:0}
+.auth-card .btn.ghost{align-self:center}
+.stack{display:flex;flex-direction:column;gap:14px}
+.btn.block{width:100%;justify-content:center;padding-block:12px}
+/* usuário e visão */
+.userbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:-6px}
+.who{display:flex;align-items:center;gap:10px;min-width:0}
+.who b{display:block;font-weight:600;font-size:14px;line-height:1.2}
+.who small{display:block;font-size:12px;color:var(--muted)}
+.avatar{width:34px;height:34px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-family:var(--f-display);font-weight:800;font-size:15px;flex:none}
+.scope{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;color:var(--muted);min-width:0}
+.scope select{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:8px 12px;font-weight:600;color:var(--ink);max-width:260px}
+@media (max-width:520px){.scope{width:100%}.scope select{flex:1;max-width:none}}
+.opn{font-weight:600;color:var(--accent)}
+/* tabela de operadores */
+.tblwrap{overflow-x:auto;margin-inline:-4px}
+.tbl{width:100%;border-collapse:collapse;font-size:13.5px;min-width:820px}
+.tbl th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600;padding:8px;border-bottom:1px solid var(--line);white-space:nowrap}
+.tbl td{padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:middle;white-space:nowrap}
+.tbl td small{display:block;font-size:11.5px;color:var(--muted);font-weight:400}
+.tbl .r{text-align:right}.tbl .c{text-align:center}
+.tbl tbody tr{cursor:pointer}.tbl tbody tr:hover{background:var(--surface-2)}
+.tbl tbody tr.off{opacity:.55}
+.tbl tfoot td{border-bottom:0;background:var(--surface-2);font-weight:600}
+.copy{display:flex;gap:8px}
+.copy input,#acc{flex:1;min-width:0;border:1px solid var(--line);background:var(--surface-2);border-radius:10px;padding:10px 12px;font-size:13px;width:100%;resize:none;color:var(--ink)}
+hr.sep{border:0;border-top:1px solid var(--line);margin:4px 0;width:100%}
+.field input[readonly]{opacity:.7}
 </style>
 </head>
 <body>
+<section id="auth" class="auth" hidden><div class="auth-card" id="auth-card"></div></section>
 
+<div id="app" hidden>
 <div class="wrap">
   <header class="top">
     <div class="brand">
@@ -206,16 +241,19 @@ details.opt[open] summary{margin-bottom:10px}
     <div class="actions">
       <button class="btn primary desk-only" data-act="novo"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3v10M3 8h10"/></svg>Novo lançamento</button>
       <button class="btn soft desk-only" data-act="lancar">Lançar em lote existente</button>
-      <button class="btn" data-act="caixa">Caixa</button>
+      <button class="btn" data-act="caixa" data-admin hidden>Caixa</button>
       <button class="btn" data-act="sync" aria-label="Atualizar dados da planilha" title="Atualizar"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9M13.5 2.5v3h-3"/></svg>Atualizar</button>
-      <button class="btn" data-act="config" aria-label="Capital inicial, planilha e exportação">Ajustes</button>
+      <button class="btn" data-act="config">Ajustes</button>
     </div>
   </header>
 
-  <div id="notice" class="notice" hidden></div>
+  <div class="userbar">
+    <div class="who" id="who"></div>
+    <label class="scope" data-admin hidden><span>Visão</span><select id="scope" aria-label="Escolher operador"></select></label>
+  </div>
 
   <section class="band" id="band" aria-label="Resumo">
-    <div class="kpi hero"><span class="lbl">Saldo em caixa</span><span class="val" id="k-saldo">—</span><span class="sub" id="k-saldo-s">Capital + recolhido − investido</span></div>
+    <div class="kpi hero"><span class="lbl">Saldo em caixa</span><span class="val" id="k-saldo">—</span><span class="sub" id="k-saldo-s"></span></div>
     <div class="kpi"><span class="lbl">Resultado acumulado</span><span class="val" id="k-res">—</span><span class="sub" id="k-res-s"></span></div>
     <div class="kpi"><span class="lbl">Hoje</span><span class="val" id="k-hoje">—</span><span class="sub" id="k-hoje-s"></span></div>
     <div class="kpi"><span class="lbl">A recolher</span><span class="val" id="k-prev">—</span><span class="sub" id="k-prev-s"></span></div>
@@ -231,8 +269,9 @@ details.opt[open] summary{margin-bottom:10px}
   <section class="panel">
     <div class="panel-h">
       <div class="tabs" role="tablist">
-        <button role="tab" id="tab-lotes" aria-selected="true" data-tab="lotes">Lotes</button>
-        <button role="tab" id="tab-hist" aria-selected="false" data-tab="hist">Histórico</button>
+        <button role="tab" aria-selected="true" data-tab="lotes">Lotes</button>
+        <button role="tab" aria-selected="false" data-tab="hist">Histórico</button>
+        <button role="tab" aria-selected="false" data-tab="ops" data-admin hidden>Operadores</button>
       </div>
       <span class="caption" id="list-cap"></span>
     </div>
@@ -244,15 +283,17 @@ details.opt[open] summary{margin-bottom:10px}
           <button class="chip" data-f="lucro" aria-pressed="false">Com lucro</button>
           <button class="chip" data-f="prej" aria-pressed="false">Com prejuízo</button>
         </div>
-        <input class="search" id="q" type="search" placeholder="Buscar lote pelo nome" autocomplete="off">
+        <input class="search" id="q" type="search" placeholder="Buscar lote" autocomplete="off">
       </div>
       <div class="lotes" id="lotes"></div>
     </div>
     <div id="view-hist" hidden><div id="hist"></div></div>
+    <div id="view-ops" hidden><div id="ops"></div></div>
   </section>
 </div>
+</div>
 
-<nav class="mbar">
+<nav class="mbar" hidden>
   <button class="btn primary" data-act="novo">Novo lançamento</button>
   <button class="btn soft" data-act="lancar">Lote existente</button>
 </nav>
@@ -276,44 +317,63 @@ function dayLbl(iso,withYear){if(!iso)return"—";const [y,m,d]=iso.split("-");c
 function parseMoney(s){s=String(s??"").replace(/[R$\s]/g,"");if(!s)return NaN;if(s.includes(","))s=s.replace(/\./g,"").replace(",",".");return Number(s)}
 function parseInt0(s){return Number(String(s??"").replace(/\D/g,""))}
 function hhmm(){const d=new Date();return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")}
+const moneyIn=v=>v==null||v===""?"":String(v).replace(".",",");
 
-/* ---------- conexão com a planilha ---------- */
+/* ---------- conexão e sessão ---------- */
 const store={get(k){try{return localStorage.getItem(k)}catch(_){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(_){}},del(k){try{localStorage.removeItem(k)}catch(_){}}};
-const CONN={url:store.get("cl_url")||"",chave:store.get("cl_chave")||""};
-const S={config:null,lotes:new Map(),lanc:new Map(),loaded:false,tab:"lotes",filter:"todos",q:"",planilha:"",busy:false,syncedAt:null};
+(function lerLinkDeAcesso(){try{const u=new URL(location.href);const api=u.searchParams.get("api");if(api&&/^https:\/\/script\.google(usercontent)?\.com\/.+\/exec$/.test(api)){store.set("cl_url",api);u.searchParams.delete("api");history.replaceState(null,"",u.pathname+(u.search||"")+u.hash)}}catch(_){}})();
+store.del("cl_chave"); // versão antiga guardava a chave
+const CONN={url:store.get("cl_url")||"",token:store.get("cl_token")||""};
+const S={me:null,users:new Map(),lotes:new Map(),lanc:new Map(),loaded:false,view:store.get("cl_view")||"todos",tab:"lotes",filter:"todos",q:"",planilha:"",busy:false,syncedAt:null,temAdmin:null,authMode:"login",authMsg:""};
+const isAdmin=()=>S.me?.papel==="admin";
 
 async function api(acao,dados){
-  if(!CONN.url||!CONN.chave)throw new Error("Painel ainda não conectado à planilha.");
+  if(!CONN.url)throw new Error("Falta o link do app da planilha.");
   let r;
-  try{r=await fetch(CONN.url,{method:"POST",body:JSON.stringify({chave:CONN.chave,acao,dados:dados||{}})})}
+  try{r=await fetch(CONN.url,{method:"POST",body:JSON.stringify({acao,dados:dados||{},token:CONN.token})})}
   catch(_){throw new Error("Sem conexão com a planilha. Verifique a internet e o link do app.")}
-  let j;try{j=await r.json()}catch(_){throw new Error("A planilha respondeu de um jeito inesperado. Confira se o link termina em /exec e se o acesso está como “Qualquer pessoa”.")}
-  if(!j.ok){const e=new Error(j.erro||"Erro na planilha.");e.codigo=j.codigo;throw e}
-  applyData(j.dados);return j;
+  let j;try{j=await r.json()}catch(_){throw new Error("A planilha respondeu de um jeito inesperado. Confira se o link termina em /exec e se o acesso do app está como “Anyone”.")}
+  if(!j.ok){const e=new Error(j.erro||"Erro na planilha.");e.codigo=j.codigo;if(j.codigo==="sessao")sair(j.erro);throw e}
+  if(j.token){CONN.token=j.token;store.set("cl_token",j.token)}
+  if(j.dados)applyData(j.dados);
+  return j;
 }
 function applyData(d){
-  S.config=d.config||null;
+  S.me=d.eu;
+  S.users=new Map((d.usuarios||[]).map(u=>[u.id,u]));
   S.lotes=new Map((d.lotes||[]).map(l=>[l.id,l]));
   S.lanc=new Map((d.lanc||[]).map(e=>[e.id,e]));
   S.planilha=d.planilha||"";S.loaded=true;S.syncedAt=hhmm();
+  if(!isAdmin())S.view=S.me.id;else if(S.view!=="todos"&&!S.users.has(S.view))S.view="todos";
   render();
 }
+function sair(msg){
+  CONN.token="";store.del("cl_token");S.loaded=false;S.me=null;S.users=new Map();S.lotes=new Map();S.lanc=new Map();
+  S.authMode="login";S.authMsg=msg||"";S.temAdmin=true;closeModal();render();
+}
 async function refresh(silent){
-  if(!CONN.url||S.busy)return;
-  try{await api("listar")}catch(e){if(!silent)toast(e.message);if(e.codigo==="chave"){S.loaded=false;render()}}
+  if(!CONN.url||!CONN.token||S.busy)return;
+  try{await api("listar")}catch(e){if(!silent&&e.codigo!=="sessao")toast(e.message)}
 }
 
 /* ---------- toast ---------- */
 let tT;function toast(msg,ms){const t=$("#toast");t.textContent=msg;t.hidden=false;clearTimeout(tT);tT=setTimeout(()=>t.hidden=true,ms||2800)}
 
 /* ---------- cálculo ---------- */
-function compute(){
+const opName=id=>S.users.get(id)?.nome||(id?"(sem operador)":"—");
+function compute(scope){
+  scope=scope||S.view;
+  const inScope=x=>scope==="todos"||x.op===scope;
   const lots=new Map();
-  for(const [id,l] of S.lotes) lots.set(id,{...l,id,inv:0,rec:0,prev:0,rodadas:0,ops:0,last:l.data,ents:[]});
-  const T={capital:Number(S.config?.capital)||0,inicio:S.config?.inicio||null,inv:0,rec:0,prev:0,ap:0,ret:0};
+  for(const [id,l] of S.lotes) if(inScope(l)) lots.set(id,{...l,id,inv:0,rec:0,prev:0,rodadas:0,ops:0,last:l.data,ents:[]});
+  const us=[...S.users.values()].filter(u=>scope==="todos"||u.id===scope);
+  const inicios=us.map(u=>u.inicio).filter(Boolean).sort();
+  const T={capital:us.reduce((s,u)=>s+(Number(u.capital)||0),0),inicio:inicios[0]||null,inv:0,rec:0,prev:0,ap:0,ret:0,last:null,count:0};
   const byDay=new Map();
   const day=d=>{if(!byDay.has(d))byDay.set(d,{inv:0,rec:0,ap:0,ret:0,prev:0,lotes:0});return byDay.get(d)};
   for(const [id,e] of S.lanc){
+    if(!inScope(e))continue;
+    T.count++;if(!T.last||e.data>T.last)T.last=e.data;
     const v=Number(e.valor)||0, real=e.status!=="previsto", L=lots.get(e.loteId);
     if(L){L.ents.push({...e,id});if(e.data>L.last)L.last=e.data}
     if(e.tipo==="investimento"){T.inv+=v;day(e.data).inv+=v;if(L){L.inv+=v;L.rodadas++;L.ops+=Number(e.qtd)||0}}
@@ -328,6 +388,7 @@ function compute(){
     if(L.data) day(L.data).lotes++;
   }
   T.res=T.rec-T.inv; T.roi=T.inv?T.res/T.inv:0; T.saldo=T.capital+T.ap-T.ret-T.inv+T.rec;
+  T.abertos=[...lots.values()].filter(l=>l.st==="recolher"||l.st==="aguardando").length;
   const dates=[...byDay.keys()].sort(); const today=todayISO();
   let start=T.inicio||dates[0]||null; if(dates[0]&&start&&dates[0]<start)start=dates[0];
   const series=[];
@@ -342,10 +403,20 @@ function compute(){
 /* ---------- render ---------- */
 const ST={recolher:["A recolher","p-warn"],aguardando:["Aguardando","p-mut"],lucro:["Lucro","p-pos"],prejuizo:["Prejuízo","p-neg"]};
 function render(){
+  const logged=!!(S.me&&S.loaded);
+  $("#auth").hidden=logged; $("#app").hidden=!logged; document.querySelector(".mbar").hidden=!logged;
+  if(!logged){renderAuth();return}
+  const admin=isAdmin();
+  document.querySelectorAll("[data-admin]").forEach(el=>el.hidden=!admin);
   const C=compute(); S.C=C;
-  const connected=!!(CONN.url&&CONN.chave);
   const {T,lots,today}=C;
-  $("#sub").textContent=!connected?"Conecte o painel à sua planilha para começar.":!S.loaded?"Carregando a planilha…":`${lots.size} ${lots.size===1?"lote":"lotes"} · hoje é ${dayLbl(today,true)} · atualizado às ${S.syncedAt}`;
+  const scopeName=S.view==="todos"?"todos os operadores":opName(S.view);
+  $("#sub").textContent=`${admin?"Visão: "+scopeName+" · ":""}${lots.size} ${lots.size===1?"lote":"lotes"} · atualizado às ${S.syncedAt}`;
+  $("#who").innerHTML=`<span class="avatar" aria-hidden="true">${esc((S.me.nome||"?").trim().charAt(0).toUpperCase())}</span><span><b>${esc(S.me.nome)}</b><small>${admin?"Administrador":"Operador"}</small></span>`;
+  if(admin){
+    const sel=$("#scope");const opts=[["todos","Todos os operadores"],...[...S.users.values()].sort((a,b)=>a.papel===b.papel?a.nome.localeCompare(b.nome):a.papel==="admin"?-1:1).map(u=>[u.id,u.nome+(u.id===S.me.id?" (você)":"")+(u.ativo?"":" · inativo")])];
+    sel.innerHTML=opts.map(([v,l])=>`<option value="${esc(v)}" ${v===S.view?"selected":""}>${esc(l)}</option>`).join("");
+  }
   $("#k-saldo").textContent=money(T.saldo);
   $("#k-saldo-s").innerHTML=`Capital ${money(T.capital)}${T.ap?` · aportes ${money(T.ap)}`:""}${T.ret?` · retiradas ${money(T.ret)}`:""}`;
   const kr=$("#k-res");kr.textContent=signed(T.res);kr.className="val "+cls(T.res);
@@ -353,52 +424,64 @@ function render(){
   const td=C.byDay.get(today)||{inv:0,rec:0,lotes:0};const hr=td.rec-td.inv;
   const kh=$("#k-hoje");kh.textContent=signed(hr);kh.className="val "+cls(hr);
   $("#k-hoje-s").innerHTML=`<span>${td.lotes} ${td.lotes===1?"lote novo":"lotes novos"}</span><span>inv. ${money(td.inv)}</span><span>rec. ${money(td.rec)}</span>`;
-  const open=[...lots.values()].filter(l=>l.st==="recolher"||l.st==="aguardando").length;
   $("#k-prev").textContent=money(T.prev);
-  $("#k-prev-s").innerHTML=`<span>${open} ${open===1?"lote em aberto":"lotes em aberto"}</span><span>projetado ${money(T.saldo+T.prev)}</span>`;
-  renderWelcome(connected,C);
-  renderChart(C.series);
-  renderLotes(C); renderHist(C);
+  $("#k-prev-s").innerHTML=`<span>${T.abertos} ${T.abertos===1?"lote em aberto":"lotes em aberto"}</span><span>projetado ${money(T.saldo+T.prev)}</span>`;
+  if(!admin&&S.tab==="ops")S.tab="lotes";
+  document.querySelectorAll("[data-tab]").forEach(b=>b.setAttribute("aria-selected",String(b.dataset.tab===S.tab)));
+  $("#view-lotes").hidden=S.tab!=="lotes";$("#view-hist").hidden=S.tab!=="hist";$("#view-ops").hidden=S.tab!=="ops";
+  renderWelcome(C);renderChart(C.series);renderLotes(C);renderHist(C);if(admin)renderOps();
 }
 
-function formConexao(){return `<form id="fx" novalidate style="display:flex;flex-direction:column;gap:12px">
-  <div class="field"><label for="x-url">Link do app da Web (termina em /exec)</label><input id="x-url" class="num" placeholder="https://script.google.com/macros/s/…/exec" value="${esc(CONN.url)}" autocomplete="off"></div>
-  <div class="field"><label for="x-chave">Chave de acesso</label><input id="x-chave" class="num" placeholder="aparece no menu Controle de Lotes da planilha" value="${esc(CONN.chave)}" autocomplete="off"></div>
-  <div class="err" id="x-err"></div><div class="sheet-f"><button class="btn primary" type="submit">Conectar</button></div></form>`}
-async function conectar(form){
-  const url=form.querySelector("#x-url").value.trim(),chave=form.querySelector("#x-chave").value.trim(),err=form.querySelector("#x-err");
-  if(!/^https:\/\/script\.google(usercontent)?\.com\/.+\/exec$/.test(url))return err.textContent="Cole o link do app da Web. Ele começa com https://script.google.com e termina em /exec.",false;
-  if(!chave)return err.textContent="Cole a chave de acesso.",false;
-  const old={...CONN};CONN.url=url;CONN.chave=chave;
-  const btn=form.querySelector("button[type=submit]");btn.disabled=true;btn.textContent="Conectando…";
-  try{await api("listar");store.set("cl_url",url);store.set("cl_chave",chave);toast("Painel conectado à planilha");return true}
-  catch(e){CONN.url=old.url;CONN.chave=old.chave;err.textContent=e.message;return false}
-  finally{btn.disabled=false;btn.textContent="Conectar"}
+function renderAuth(){
+  const box=$("#auth-card");
+  if(!CONN.url){box.innerHTML=`<h1>Controle de Lotes</h1><p class="muted">Este aparelho ainda não sabe onde está a planilha. Abra o <b>link de acesso</b> que o administrador enviou. Se você é o administrador, cole abaixo o link do app da Web (termina em /exec).</p>
+    <form id="fa-url" novalidate class="stack"><div class="field"><label for="a-url">Link do app da Web</label><input id="a-url" class="num" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off"></div><div class="err" id="a-err"></div><button class="btn primary block" type="submit">Continuar</button></form>`;return}
+  if(S.temAdmin===null){box.innerHTML=`<h1>Controle de Lotes</h1><p class="muted">Conectando à planilha…</p>`;return}
+  if(S.temAdmin===false){box.innerHTML=`<h1>Criar administrador</h1><p class="muted">Primeiro acesso. Crie o seu login de administrador. A chave é a que a planilha mostrou em “Preparar planilha” (menu Controle de Lotes → Mostrar chave de acesso).</p>
+    <form id="fa-admin" novalidate class="stack">
+      <div class="field"><label for="a-nome">Seu nome</label><input id="a-nome" autocomplete="name"></div>
+      <div class="field"><label for="a-user">Usuário (login)</label><input id="a-user" class="num" autocomplete="username" autocapitalize="none" placeholder="ex.: ricardo"></div>
+      <div class="row2"><div class="field"><label for="a-pass">Senha</label><input id="a-pass" type="password" autocomplete="new-password"></div><div class="field"><label for="a-pass2">Repita a senha</label><input id="a-pass2" type="password" autocomplete="new-password"></div></div>
+      <div class="field"><label for="a-chave">Chave da planilha</label><input id="a-chave" class="num" autocomplete="off"></div>
+      <div class="err" id="a-err"></div><button class="btn primary block" type="submit">Criar e entrar</button></form>
+    <button class="btn ghost small" data-act="trocarlink">Usar outro link de planilha</button>`;return}
+  box.innerHTML=`<h1>Entrar</h1><p class="muted">Controle de Lotes</p>${S.authMsg?`<div class="notice">${esc(S.authMsg)}</div>`:""}
+    <form id="fa-login" novalidate class="stack">
+      <div class="field"><label for="a-user">Usuário</label><input id="a-user" class="num" autocomplete="username" autocapitalize="none"></div>
+      <div class="field"><label for="a-pass">Senha</label><input id="a-pass" type="password" autocomplete="current-password"></div>
+      <div class="err" id="a-err"></div><button class="btn primary block" type="submit">Entrar</button></form>
+    <p class="hint">Esqueceu a senha? Peça ao administrador para redefinir.</p>
+    <button class="btn ghost small" data-act="trocarlink">Usar outro link de planilha</button>`;
+}
+async function checarStatus(){
+  if(!CONN.url)return render();
+  S.temAdmin=null;render();
+  try{const r=await fetch(CONN.url,{method:"POST",body:JSON.stringify({acao:"status"})});const j=await r.json();if(!j.ok)throw new Error(j.erro);S.temAdmin=!!j.temAdmin}
+  catch(e){S.temAdmin=true;S.authMsg="Não consegui falar com a planilha. Confira a internet e o link do app."}
+  render();
 }
 
-function renderWelcome(connected,C){
+function renderWelcome(C){
   const w=$("#welcome");
-  if(!connected){w.hidden=false;w.innerHTML=`<div class="welcome"><div><h2>Conecte sua planilha</h2>
-    <p class="muted" style="margin:0">Os lançamentos ficam guardados numa planilha do seu Google Drive. Cole aqui o link do app da Web e a chave que a planilha mostrou. Isso é feito uma vez em cada aparelho.</p>
-    <ol><li>Planilha: menu Controle de Lotes → Preparar planilha</li><li>Apps Script: Implantar → App da Web → copiar o link</li><li>Colar o link e a chave ao lado</li></ol></div><div>${formConexao()}</div></div>`;return}
-  if(!S.loaded){w.hidden=true;return}
-  const noCap=!S.config, noLots=C.lots.size===0;
-  if(!noCap&&!noLots){w.hidden=true;return}
+  if(isAdmin()){
+    if(S.users.size>1){w.hidden=true;return}
+    w.hidden=false;
+    w.innerHTML=`<div class="welcome"><div><h2>Cadastre seus operadores</h2><p class="muted" style="margin:0">Cada operador recebe usuário e senha, tem caixa próprio e vê só os lançamentos dele. Você vê todos, um por um ou somados.</p>
+      <ol><li>Defina o seu capital em Operadores → você → Editar</li><li>Crie um operador com usuário, senha e capital</li><li>Envie para ele o link de acesso e o login</li></ol></div>
+      <div class="actions"><button class="btn primary" data-act="novoop">Novo operador</button><button class="btn" data-act="linkacesso">Link de acesso</button></div></div>`;return}
+  if(C.lots.size){w.hidden=true;return}
   w.hidden=false;
-  w.innerHTML=`<div class="welcome"><div><h2>${noCap?"Comece pelo capital inicial":"Agora crie o seu primeiro lote"}</h2>
-    <p class="muted" style="margin:0">${noCap?"É o dinheiro com que você começa. Depois disso, cada lote que você criar sai do caixa e cada recolhimento volta para ele.":"Dê um nome ao lote, informe quantas operações e o valor de cada uma. Os recolhimentos você lança depois, escolhendo o lote."}</p>
-    <ol><li>Capital inicial</li><li>Novo lançamento: cria o lote com o nome que você quiser</li><li>Lote existente: recolhimento ou nova rodada</li></ol></div>
-    <div>${noCap?formCapital(true):`<button class="btn primary" data-act="novo">Criar primeiro lote</button>`}</div></div>`;
+  w.innerHTML=`<div class="welcome"><div><h2>Olá, ${esc(S.me.nome.split(" ")[0])}</h2><p class="muted" style="margin:0">Seu capital inicial é ${money(C.T.capital)}. Crie o seu primeiro lote com o nome que quiser; os recolhimentos você lança depois, escolhendo o lote.</p></div>
+    <div><button class="btn primary" data-act="novo">Criar primeiro lote</button></div></div>`;
 }
 
 function renderLotes(C){
   const box=$("#lotes");
-  if(!S.loaded){box.innerHTML=`<div class="empty">${CONN.url?"Carregando lotes…":"Os lotes aparecem aqui depois de conectar a planilha."}</div>`;$("#list-cap").textContent="";return}
   let arr=[...C.lots.values()];
-  const total=arr.length;
+  const total=arr.length,showOp=isAdmin()&&S.view==="todos";
   const f=S.filter,q=S.q.trim().toLowerCase();
   arr=arr.filter(l=>(f==="todos")||(f==="aberto"&&(l.st==="recolher"||l.st==="aguardando"))||(f==="lucro"&&l.rec>0&&l.res>0)||(f==="prej"&&l.rec>0&&l.res<0));
-  if(q)arr=arr.filter(l=>String(l.nome).toLowerCase().includes(q));
+  if(q)arr=arr.filter(l=>String(l.nome).toLowerCase().includes(q)||(showOp&&opName(l.op).toLowerCase().includes(q)));
   arr.sort((a,b)=>a.last<b.last?1:a.last>b.last?-1:(b.createdAt||0)-(a.createdAt||0));
   if(S.tab==="lotes")$("#list-cap").textContent=`${arr.length} de ${total}`;
   if(!total){box.innerHTML=`<div class="empty"><h3>Nenhum lote ainda</h3><p>Use “Novo lançamento” para criar um lote com o nome que você escolher.</p><button class="btn primary" data-act="novo">Novo lançamento</button></div>`;return}
@@ -409,7 +492,7 @@ function renderLotes(C){
     const [stl,stc]=ST[l.st];
     return `<button class="lote" data-lote="${esc(l.id)}">
       <div style="min-width:0"><div class="nm">${esc(l.nome)}</div>
-        <div class="meta">${dayLbl(l.data)} · ${l.rodadas} ${l.rodadas===1?"rodada":"rodadas"}${l.ops?` · ${l.ops.toLocaleString("pt-BR")} op.`:""}</div></div>
+        <div class="meta">${showOp?`<span class="opn">${esc(opName(l.op))}</span> · `:""}${dayLbl(l.data)} · ${l.rodadas} ${l.rodadas===1?"rodada":"rodadas"}${l.ops?` · ${l.ops.toLocaleString("pt-BR")} op.`:""}</div></div>
       <div class="flow"><div class="nums"><span class="muted">Investido <span class="num" style="color:var(--ink)">${money(l.inv)}</span></span><span class="muted">Recolhido <span class="num" style="color:var(--ink)">${money(l.rec)}</span></span></div>
         <div class="bar" title="Recolhido em relação ao investido"><i class="${l.rec>=l.inv&&l.inv>0?"over":""}" style="width:${wr}%"></i>${wp?`<i class="fc" style="left:${wr}%;width:${wp}%"></i>`:""}${l.rec+l.prev>l.inv?`<span style="position:absolute;top:-2px;bottom:-2px;left:${winv}%;width:2px;background:var(--ink)"></span>`:""}</div></div>
       <div class="res ${cls(l.res)}">${l.rec?signed(l.res):"—"}<small>${l.rec?pct(l.roi):"sem retorno"}</small></div>
@@ -418,26 +501,42 @@ function renderLotes(C){
 
 const TP={investimento:["Investimento","p-acc"],recolhimento:["Recolhimento","p-pos"],aporte:["Aporte","p-mut"],retirada:["Retirada","p-neg"]};
 function entRow(e,showLote){
-  const L=S.lotes.get(e.loteId);const prev=e.status==="previsto";
+  const L=S.lotes.get(e.loteId);const prev=e.status==="previsto";const admin=isAdmin();const showOp=admin&&S.view==="todos";
   const [tl,tc]=prev?["Previsto","p-warn"]:TP[e.tipo]||["?","p-mut"];
   const sign=(e.tipo==="investimento"||e.tipo==="retirada")?-1:1;
   const det=e.tipo==="investimento"?(e.qtd&&e.valorOp?`${Number(e.qtd).toLocaleString("pt-BR")} × ${money(e.valorOp)}`:"valor total"):e.tipo==="recolhimento"?(prev?"recolhimento previsto":"recolhimento"):(e.obs||"");
   return `<div class="ent ${prev?"prev":""}">
     <span class="tp"><span class="pill ${tc}">${tl}</span></span>
-    <div class="who">${showLote?(L?`<b>${esc(L.nome)}</b> `:(e.loteId?`<b class="muted">lote excluído</b> `:"<b>Caixa</b> ")):`<b class="num">${dayLbl(e.data)}</b> `}<span>${esc(det)}${e.obs&&e.tipo!=="aporte"&&e.tipo!=="retirada"?" · "+esc(e.obs):""}</span></div>
+    <div class="who">${showLote?(L?`<b>${esc(L.nome)}</b> `:(e.loteId?`<b class="muted">lote excluído</b> `:"<b>Caixa</b> ")):`<b class="num">${dayLbl(e.data)}</b> `}<span>${showOp?`<span class="opn">${esc(opName(e.op))}</span> · `:""}${esc(det)}${e.obs&&e.tipo!=="aporte"&&e.tipo!=="retirada"?" · "+esc(e.obs):""}</span></div>
     <span class="v ${prev?"":sign>0?"pos":"neg"}">${prev?"":sign>0?"+":"−"}${money(e.valor)}</span>
-    <span class="ops">${prev?`<button class="btn small soft" data-act="receber" data-id="${esc(e.id)}">Recebido</button>`:""}<button class="btn small ghost" data-act="del" data-id="${esc(e.id)}">Excluir</button></span></div>`;
+    <span class="ops">${prev?`<button class="btn small soft" data-act="receber" data-id="${esc(e.id)}">Recebido</button>`:""}${admin?`<button class="btn small ghost" data-act="del" data-id="${esc(e.id)}">Excluir</button>`:""}</span></div>`;
 }
 function renderHist(C){
   const box=$("#hist");
-  if(!S.loaded){box.innerHTML=`<div class="empty">${CONN.url?"Carregando histórico…":"O histórico aparece aqui depois de conectar a planilha."}</div>`;return}
-  const all=[...S.lanc.values()];
+  const all=[...S.lanc.values()].filter(e=>S.view==="todos"||e.op===S.view);
   if(S.tab==="hist")$("#list-cap").textContent=`${all.length} lançamentos`;
-  if(!all.length){box.innerHTML=`<div class="empty"><h3>Sem lançamentos</h3><p>Tudo o que você lançar aparece aqui, dia a dia.</p></div>`;return}
+  if(!all.length){box.innerHTML=`<div class="empty"><h3>Sem lançamentos</h3><p>Tudo o que for lançado aparece aqui, dia a dia.</p></div>`;return}
   const g=new Map();for(const e of all){if(!g.has(e.data))g.set(e.data,[]);g.get(e.data).push(e)}
   const days=[...g.keys()].sort().reverse();
   box.innerHTML=days.map(d=>{const es=g.get(d).sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));const x=C.byDay.get(d)||{inv:0,rec:0};const r=x.rec-x.inv;
     return `<div class="day"><div class="day-h"><strong>${dayLbl(d,true)}</strong><span>investido ${money(x.inv)} · recolhido ${money(x.rec)} · <b class="num ${cls(r)}">${signed(r)}</b></span></div>${es.map(e=>entRow(e,true)).join("")}</div>`}).join("");
+}
+
+function renderOps(){
+  const box=$("#ops");
+  const users=[...S.users.values()].sort((a,b)=>a.papel===b.papel?a.nome.localeCompare(b.nome):a.papel==="admin"?-1:1);
+  if(S.tab==="ops")$("#list-cap").textContent=`${users.filter(u=>u.ativo).length} ativos`;
+  const rows=users.map(u=>({u,T:compute(u.id).T}));
+  const tot=compute("todos").T;
+  box.innerHTML=`<div class="toolbar"><button class="btn primary small" data-act="novoop">+ Novo operador</button><button class="btn small" data-act="linkacesso">Link de acesso</button><span class="hint">Toque num operador para ver o painel dele.</span></div>
+  <div class="tblwrap"><table class="tbl"><thead><tr><th>Operador</th><th class="r">Capital</th><th class="r">Investido</th><th class="r">Recolhido</th><th class="r">Resultado</th><th class="r">Saldo</th><th class="r">A recolher</th><th>Abertos</th><th>Último</th><th></th></tr></thead><tbody>
+  ${rows.map(({u,T})=>`<tr class="${u.ativo?"":"off"}" data-verop="${esc(u.id)}" tabindex="0">
+    <td><b>${esc(u.nome)}</b><small>${esc(u.usuario)} · ${u.papel==="admin"?"admin":"operador"}${u.ativo?"":" · inativo"}</small></td>
+    <td class="r num">${money(T.capital)}</td><td class="r num">${money(T.inv)}</td><td class="r num">${money(T.rec)}</td>
+    <td class="r num ${cls(T.res)}">${signed(T.res)}<small>${pct(T.roi)}</small></td><td class="r num"><b>${money(T.saldo)}</b></td>
+    <td class="r num">${T.prev?money(T.prev):"—"}</td><td class="c">${T.abertos||"—"}</td><td>${T.last?dayLbl(T.last):"—"}</td>
+    <td class="r"><button class="btn small" data-act="editop" data-id="${esc(u.id)}">Editar</button></td></tr>`).join("")}
+  </tbody><tfoot><tr><td><b>Total</b></td><td class="r num">${money(tot.capital)}</td><td class="r num">${money(tot.inv)}</td><td class="r num">${money(tot.rec)}</td><td class="r num ${cls(tot.res)}">${signed(tot.res)}<small>${pct(tot.roi)}</small></td><td class="r num"><b>${money(tot.saldo)}</b></td><td class="r num">${tot.prev?money(tot.prev):"—"}</td><td class="c">${tot.abertos||"—"}</td><td></td><td></td></tr></tfoot></table></div>`;
 }
 
 /* ---------- gráfico ---------- */
@@ -477,7 +576,7 @@ function modal(title,body,onMount){
   const root=$("#modal-root");
   root.innerHTML=`<div class="overlay" data-close="1"><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="mt"><div class="sheet-h"><h2 id="mt">${esc(title)}</h2><button class="btn ghost small" data-close="1" aria-label="Fechar">Fechar</button></div><div class="sheet-b">${body}</div></div></div>`;
   onMount&&onMount(root);
-  const f=root.querySelector("input:not([type=radio]):not([type=hidden]),select");f&&setTimeout(()=>f.focus(),30);
+  const f=root.querySelector("input:not([type=radio]):not([type=hidden]):not([readonly]),select");f&&setTimeout(()=>f.focus(),30);
 }
 function closeModal(){$("#modal-root").innerHTML=""}
 function invFields(prefix){return `
@@ -496,20 +595,25 @@ function readInv(root,prefix){const m=root.querySelector(`input[name=${prefix}-m
   if(m==="tot"){const t=parseMoney(root.querySelector(`#${prefix}-tot`).value);return {modo:m,valor:t>0?t:NaN,qtd:null,valorOp:null}}
   const q=parseInt0(root.querySelector(`#${prefix}-qtd`).value),v=parseMoney(root.querySelector(`#${prefix}-vop`).value);return {modo:m,qtd:q,valorOp:v,valor:q>0&&v>0?Math.round(q*v*100)/100:NaN}}
 function dateField(id,label,val){return `<div class="field"><label for="${id}">${label}</label><input id="${id}" type="date" value="${val||todayISO()}"></div>`}
-function nameTaken(nome){const k=nome.trim().toLowerCase();for(const l of S.lotes.values())if(String(l.nome).trim().toLowerCase()===k)return true;return false}
+function opSelect(id,label,sel){
+  const us=[...S.users.values()].filter(u=>u.ativo).sort((a,b)=>a.id===S.me.id?-1:b.id===S.me.id?1:a.nome.localeCompare(b.nome));
+  return `<div class="field"><label for="${id}">${label}</label><select id="${id}">${us.map(u=>`<option value="${esc(u.id)}" ${u.id===sel?"selected":""}>${esc(u.nome)}${u.id===S.me.id?" (você)":""}</option>`).join("")}</select></div>`}
+const defaultOp=()=>S.view!=="todos"&&S.users.get(S.view)?.ativo?S.view:S.me.id;
+function nameTaken(nome,op){const k=nome.trim().toLowerCase();for(const l of S.lotes.values())if(l.op===op&&String(l.nome).trim().toLowerCase()===k)return true;return false}
 
 async function write(acao,dados,okMsg,btn){
   if(S.busy)return false;
   S.busy=true;let label;if(btn){label=btn.textContent;btn.disabled=true;btn.textContent="Salvando…"}else toast("Salvando na planilha…",8000);
-  try{await api(acao,dados);toast(okMsg);return true}
+  try{await api(acao,dados);if(okMsg)toast(okMsg);return true}
   catch(e){toast(e.message,4500);return false}
   finally{S.busy=false;if(btn&&btn.isConnected){btn.disabled=false;btn.textContent=label}}
 }
 
 function openNovo(){
-  if(!S.loaded)return toast("Conecte a planilha primeiro.");
+  const admin=isAdmin();
   modal("Novo lançamento",`<form id="f" novalidate>
-    <div class="field"><label for="n-nome">Nome do lote</label><input id="n-nome" class="num" maxlength="60" placeholder="Ex.: 30OUT-A, Lote grande, Rodada 7" autocomplete="off"><span class="hint">O nome é seu e não pode repetir.</span></div>
+    ${admin?opSelect("n-op","Operador",defaultOp()):""}
+    <div class="field"><label for="n-nome">Nome do lote</label><input id="n-nome" class="num" maxlength="60" placeholder="Ex.: 30OUT-A, Lote grande, Rodada 7" autocomplete="off"><span class="hint">O nome é livre e não pode repetir${admin?" para o mesmo operador":""}.</span></div>
     ${dateField("n-data","Data de criação")}
     ${invFields("n")}
     <details class="opt"><summary>Já houve recolhimento? (opcional)</summary>
@@ -519,29 +623,30 @@ function openNovo(){
     <div class="err" id="n-err"></div>
     <div class="sheet-f"><button type="button" class="btn" data-close="1">Cancelar</button><button class="btn primary" type="submit">Criar lote</button></div></form>`,
   root=>{wireInv(root,"n");root.querySelector("#f").addEventListener("submit",async ev=>{ev.preventDefault();
+    const op=admin?root.querySelector("#n-op").value:S.me.id;
     const nome=root.querySelector("#n-nome").value.trim(),data=root.querySelector("#n-data").value,inv=readInv(root,"n"),err=root.querySelector("#n-err");
     const recTxt=root.querySelector("#n-rec").value.trim(),rec=parseMoney(recTxt),rst=root.querySelector("#n-rst").value,obs=root.querySelector("#n-obs").value.trim();
     if(!nome)return err.textContent="Dê um nome ao lote.";
-    if(nameTaken(nome))return err.textContent=`Já existe um lote chamado “${nome}”. Escolha outro nome.`;
+    if(nameTaken(nome,op))return err.textContent=`${op===S.me.id?"Você já tem":opName(op)+" já tem"} um lote chamado “${nome}”. Escolha outro nome.`;
     if(!data)return err.textContent="Informe a data.";
     if(!(inv.valor>0))return err.textContent=inv.modo==="tot"?"Informe o valor total investido.":"Informe a quantidade de operações e o valor de cada uma.";
     if(recTxt&&!(rec>0))return err.textContent="O valor recolhido não é válido.";
     const lancs=[{tipo:"investimento",data,qtd:inv.qtd||null,valorOp:inv.valorOp||null,valor:inv.valor,status:"realizado"}];
     if(rec>0)lancs.push({tipo:"recolhimento",data,valor:rec,status:rst});
-    const ok=await write("criarLote",{lote:{nome,data,obs},lancamentos:lancs},`Lote “${nome}” criado`,root.querySelector("button[type=submit]"));
+    const ok=await write("criarLote",{operadorId:op,lote:{nome,data,obs},lancamentos:lancs},`Lote “${nome}” criado`,root.querySelector("button[type=submit]"));
     if(ok)closeModal()})});
 }
 
 function loteOptions(sel){
-  const C=S.C||compute();const arr=[...C.lots.values()].sort((a,b)=>a.last<b.last?1:a.last>b.last?-1:0);
+  const C=S.C||compute();const showOp=isAdmin()&&S.view==="todos";
+  const arr=[...C.lots.values()].sort((a,b)=>a.last<b.last?1:a.last>b.last?-1:0);
   const isOpen=l=>l.st==="recolher"||l.st==="aguardando";
-  const opt=l=>`<option value="${esc(l.id)}" ${l.id===sel?"selected":""}>${esc(l.nome)} — ${dayLbl(l.data)} · inv. ${money(l.inv)}${l.prev?" · prev. "+money(l.prev):""}</option>`;
+  const opt=l=>`<option value="${esc(l.id)}" ${l.id===sel?"selected":""}>${showOp?esc(opName(l.op))+" · ":""}${esc(l.nome)} — ${dayLbl(l.data)} · inv. ${money(l.inv)}${l.prev?" · prev. "+money(l.prev):""}</option>`;
   const open=arr.filter(isOpen),rest=arr.filter(l=>!isOpen(l));
   return `<option value="">Escolha o lote…</option>${open.length?`<optgroup label="Em aberto">${open.map(opt).join("")}</optgroup>`:""}${rest.length?`<optgroup label="Demais lotes">${rest.map(opt).join("")}</optgroup>`:""}`;
 }
 function openLancar(preId){
-  if(!S.loaded)return toast("Conecte a planilha primeiro.");
-  if(!S.lotes.size){toast("Crie um lote primeiro em “Novo lançamento”.");return openNovo()}
+  if(!S.C||!S.C.lots.size){toast("Crie um lote primeiro em “Novo lançamento”.");return openNovo()}
   modal("Lançar em lote existente",`<form id="f" novalidate>
     <div class="field"><label for="l-lote">Lote</label><select id="l-lote">${loteOptions(preId)}</select><span class="hint" id="l-info"></span></div>
     <div class="seg" role="radiogroup" aria-label="Tipo de lançamento">
@@ -557,7 +662,7 @@ function openLancar(preId){
     <div class="sheet-f"><button type="button" class="btn" data-close="1">Cancelar</button><button class="btn primary" type="submit">Lançar</button></div></form>`,
   root=>{wireInv(root,"l");
     const sync=()=>{const t=root.querySelector("input[name=l-tipo]:checked").value;root.querySelectorAll("[data-t]").forEach(el=>{el.hidden=el.dataset.t!==t});
-      const id=root.querySelector("#l-lote").value,L=S.C?.lots.get(id);root.querySelector("#l-info").textContent=L?`Investido ${money(L.inv)} · recolhido ${money(L.rec)}${L.prev?" · previsto "+money(L.prev):""} · resultado ${signed(L.res)}`:""};
+      const id=root.querySelector("#l-lote").value,L=S.C?.lots.get(id);root.querySelector("#l-info").textContent=L?`${isAdmin()?opName(L.op)+" · ":""}Investido ${money(L.inv)} · recolhido ${money(L.rec)}${L.prev?" · previsto "+money(L.prev):""} · resultado ${signed(L.res)}`:""};
     root.querySelectorAll("input[name=l-tipo],#l-lote").forEach(el=>el.addEventListener("change",sync));sync();
     root.querySelector("#f").addEventListener("submit",async ev=>{ev.preventDefault();
       const err=root.querySelector("#l-err"),loteId=root.querySelector("#l-lote").value,tipo=root.querySelector("input[name=l-tipo]:checked").value,data=root.querySelector("#l-data").value,obs=root.querySelector("#l-obs").value.trim();
@@ -571,43 +676,78 @@ function openLancar(preId){
 }
 
 function openCaixa(){
-  if(!S.loaded)return toast("Conecte a planilha primeiro.");
+  if(!isAdmin())return;
   modal("Caixa: aporte ou retirada",`<form id="f" novalidate>
+    ${opSelect("c-op","Caixa de qual operador",defaultOp())}
     <div class="seg" role="radiogroup" aria-label="Tipo"><label><input type="radio" name="c-tipo" value="aporte" checked>Aporte (entra)</label><label><input type="radio" name="c-tipo" value="retirada">Retirada (sai)</label></div>
     <div class="row2">${dateField("c-data","Data")}<div class="field"><label for="c-val">Valor</label><input id="c-val" class="num" inputmode="decimal" placeholder="500,00"></div></div>
     <div class="field"><label for="c-obs">Observação (opcional)</label><input id="c-obs" maxlength="140" autocomplete="off"></div>
-    <span class="hint">Use para dinheiro que entra ou sai do caixa sem ser de um lote.</span>
+    <span class="hint">Dinheiro que entra ou sai do caixa do operador sem ser de um lote.</span>
     <div class="err" id="c-err"></div>
     <div class="sheet-f"><button type="button" class="btn" data-close="1">Cancelar</button><button class="btn primary" type="submit">Lançar</button></div></form>`,
   root=>root.querySelector("#f").addEventListener("submit",async ev=>{ev.preventDefault();
-    const tipo=root.querySelector("input[name=c-tipo]:checked").value,data=root.querySelector("#c-data").value,v=parseMoney(root.querySelector("#c-val").value),obs=root.querySelector("#c-obs").value.trim(),err=root.querySelector("#c-err");
+    const op=root.querySelector("#c-op").value,tipo=root.querySelector("input[name=c-tipo]:checked").value,data=root.querySelector("#c-data").value,v=parseMoney(root.querySelector("#c-val").value),obs=root.querySelector("#c-obs").value.trim(),err=root.querySelector("#c-err");
     if(!data)return err.textContent="Informe a data.";if(!(v>0))return err.textContent="Informe o valor.";
-    const ok=await write("lancar",{lanc:{loteId:null,tipo,data,valor:v,status:"realizado",obs}},tipo==="aporte"?"Aporte lançado":"Retirada lançada",root.querySelector("button[type=submit]"));if(ok)closeModal()}));
+    const ok=await write("lancar",{lanc:{operadorId:op,loteId:null,tipo,data,valor:v,status:"realizado",obs}},tipo==="aporte"?"Aporte lançado":"Retirada lançada",root.querySelector("button[type=submit]"));if(ok)closeModal()}));
 }
 
-function formCapital(inline){const c=S.config||{};return `<form id="fc" novalidate style="display:flex;flex-direction:column;gap:12px">
-  <div class="row2"><div class="field"><label for="k-cap">Capital inicial</label><input id="k-cap" class="num" inputmode="decimal" placeholder="5.000,00" value="${c.capital!=null?String(c.capital).replace(".",","):""}"></div>${dateField("k-ini","Início do controle",c.inicio)}</div>
-  <div class="err" id="k-err"></div><div class="sheet-f"><button class="btn primary" type="submit">${inline?"Salvar e começar":"Salvar capital"}</button></div></form>`}
-async function saveCapital(form){const v=parseMoney(form.querySelector("#k-cap").value),ini=form.querySelector("#k-ini").value,err=form.querySelector("#k-err");
-  if(!(v>=0))return err.textContent="Informe o capital inicial (pode ser 0).",false;if(!ini)return err.textContent="Informe a data de início.",false;
-  return write("config",{capital:v,inicio:ini},"Capital salvo",form.querySelector("button[type=submit]"))}
-function openConfig(){
-  const conn=CONN.url&&CONN.chave;
-  modal("Ajustes",`${S.loaded?formCapital(false)+'<hr style="border:0;border-top:1px solid var(--line);margin:4px 0">':""}
-    <div class="field"><span class="lab">Planilha</span><span class="hint">${conn?"Painel conectado. Os lançamentos ficam na aba Lançamentos; a aba Resumo mostra os totais.":"Painel ainda não conectado."}</span></div>
-    <div class="sheet-f" style="justify-content:flex-start">${S.planilha?`<a class="btn" href="${esc(S.planilha)}" target="_blank" rel="noopener">Abrir planilha</a>`:""}<button type="button" class="btn" data-act="export" ${S.loaded?"":"disabled"}>Exportar CSV</button><button type="button" class="btn" data-act="reconectar">${conn?"Trocar conexão":"Conectar"}</button>${conn?`<button type="button" class="btn ghost" data-act="desconectar">Desconectar este aparelho</button>`:""}</div>`,
-  root=>{const f=root.querySelector("#fc");f&&f.addEventListener("submit",async ev=>{ev.preventDefault();if(await saveCapital(ev.currentTarget))closeModal()})});
+function openOperador(id){
+  const u=id?S.users.get(id):null;const self=u&&u.id===S.me.id;
+  modal(u?"Editar "+u.nome:"Novo operador",`<form id="f" novalidate>
+    <div class="field"><label for="o-nome">Nome</label><input id="o-nome" value="${esc(u?.nome||"")}" autocomplete="off"></div>
+    <div class="row2"><div class="field"><label for="o-user">Usuário (login)</label><input id="o-user" class="num" value="${esc(u?.usuario||"")}" ${u?"readonly":""} autocapitalize="none" autocomplete="off" placeholder="ex.: joao"></div>
+    <div class="field"><label for="o-pass">${u?"Nova senha (opcional)":"Senha inicial"}</label><input id="o-pass" type="text" class="num" autocomplete="off" placeholder="mínimo 6 caracteres"></div></div>
+    <div class="row2"><div class="field"><label for="o-cap">Capital inicial</label><input id="o-cap" class="num" inputmode="decimal" placeholder="2.000,00" value="${esc(moneyIn(u?.capital))}"></div>${dateField("o-ini","Início",u?.inicio)}</div>
+    <div class="row2"><div class="field"><label for="o-papel">Papel</label><select id="o-papel" ${self?"disabled":""}><option value="operador" ${u?.papel!=="admin"?"selected":""}>Operador</option><option value="admin" ${u?.papel==="admin"?"selected":""}>Administrador</option></select></div>
+    ${u?`<div class="field"><label for="o-ativo">Acesso</label><select id="o-ativo" ${self?"disabled":""}><option value="1" ${u.ativo?"selected":""}>Ativo</option><option value="0" ${u.ativo?"":"selected"}>Desativado</option></select></div>`:"<div></div>"}</div>
+    <span class="hint">${u?"Desativar bloqueia o login na hora, mas mantém todos os lançamentos.":"Depois de salvar, envie ao operador o link de acesso, o usuário e a senha inicial."}</span>
+    <div class="err" id="o-err"></div>
+    <div class="sheet-f"><button type="button" class="btn" data-close="1">Cancelar</button><button class="btn primary" type="submit">${u?"Salvar":"Criar operador"}</button></div></form>`,
+  root=>root.querySelector("#f").addEventListener("submit",async ev=>{ev.preventDefault();
+    const err=root.querySelector("#o-err");const nome=root.querySelector("#o-nome").value.trim(),usuario=root.querySelector("#o-user").value.trim().toLowerCase(),senha=root.querySelector("#o-pass").value,capTxt=root.querySelector("#o-cap").value.trim();
+    const cap=capTxt?parseMoney(capTxt):0;
+    if(!nome)return err.textContent="Informe o nome.";
+    if(!u&&!/^[a-z0-9._-]{3,30}$/.test(usuario))return err.textContent="Usuário: 3 a 30 caracteres, letras, números, ponto, hífen ou sublinhado, sem espaço.";
+    if((!u||senha)&&senha.length<6)return err.textContent="A senha precisa ter pelo menos 6 caracteres.";
+    if(!(cap>=0))return err.textContent="Capital inválido.";
+    const dados={id:u?.id,nome,capital:cap,inicio:root.querySelector("#o-ini").value,papel:self?"admin":root.querySelector("#o-papel").value};
+    if(u){dados.ativo=self?true:root.querySelector("#o-ativo").value==="1";if(senha)dados.novaSenha=senha}else{dados.usuario=usuario;dados.senha=senha}
+    const ok=await write("salvarUsuario",dados,u?"Dados salvos":`${nome} cadastrado`,root.querySelector("button[type=submit]"));
+    if(ok){closeModal();if(!u)openAcessoOperador(nome,usuario,senha)}}));
 }
-function openConexao(){modal("Conectar planilha",formConexao(),root=>root.querySelector("#fx").addEventListener("submit",async ev=>{ev.preventDefault();if(await conectar(ev.currentTarget))closeModal()}))}
+const linkAcesso=()=>location.origin+location.pathname+"?api="+encodeURIComponent(CONN.url);
+function copyBox(id,val){return `<div class="copy"><input id="${id}" class="num" readonly value="${esc(val)}"><button type="button" class="btn small" data-copy="${id}">Copiar</button></div>`}
+function openLinkAcesso(){modal("Link de acesso",`<p class="muted" style="margin:0">Envie este link para os operadores. Ao abrir, o painel já sabe onde está a planilha; eles só precisam do usuário e da senha.</p>${copyBox("lk",linkAcesso())}<span class="hint">O link não dá acesso sozinho: sem usuário e senha, ninguém vê nada.</span>`)}
+function openAcessoOperador(nome,usuario,senha){
+  const txt=`Acesso ao Controle de Lotes\n${linkAcesso()}\nUsuário: ${usuario}\nSenha: ${senha}`;
+  modal("Acesso de "+nome,`<p class="muted" style="margin:0">Envie esta mensagem para ${esc(nome.split(" ")[0])}. Por segurança, peça para trocar a senha no primeiro acesso (Ajustes → Trocar senha).</p>
+    <textarea id="acc" class="num" readonly rows="4">${esc(txt)}</textarea><div class="sheet-f"><button type="button" class="btn primary" data-copy="acc">Copiar mensagem</button></div>`)}
+
+function openConfig(){
+  const admin=isAdmin();
+  modal("Ajustes",`<div class="field"><span class="lab">Minha conta</span><span>${esc(S.me.nome)} · <span class="num">${esc(S.me.usuario)}</span> · ${admin?"Administrador":"Operador"}</span></div>
+    <form id="fs" novalidate class="stack" style="gap:10px"><div class="row2"><div class="field"><label for="s-atual">Senha atual</label><input id="s-atual" type="password" autocomplete="current-password"></div><div class="field"><label for="s-nova">Nova senha</label><input id="s-nova" type="password" autocomplete="new-password"></div></div>
+    <div class="err" id="s-err"></div><div class="sheet-f"><button class="btn" type="submit">Trocar senha</button></div></form>
+    <hr class="sep">
+    <div class="sheet-f" style="justify-content:flex-start">
+      ${admin&&S.planilha?`<a class="btn" href="${esc(S.planilha)}" target="_blank" rel="noopener">Abrir planilha</a>`:""}
+      ${admin?`<button type="button" class="btn" data-act="linkacesso">Link de acesso</button>`:""}
+      <button type="button" class="btn" data-act="export">Exportar CSV</button>
+      <button type="button" class="btn danger" data-act="sair">Sair</button></div>`,
+  root=>root.querySelector("#fs").addEventListener("submit",async ev=>{ev.preventDefault();
+    const atual=root.querySelector("#s-atual").value,nova=root.querySelector("#s-nova").value,err=root.querySelector("#s-err");
+    if(!atual)return err.textContent="Digite a senha atual.";if(nova.length<6)return err.textContent="A nova senha precisa ter pelo menos 6 caracteres.";
+    if(await write("trocarSenha",{atual,nova},"Senha trocada",ev.currentTarget.querySelector("button[type=submit]")))closeModal()}));
+}
 
 function openLote(id){
-  const L=S.C?.lots.get(id);if(!L)return closeModal();const [stl,stc]=ST[L.st];
-  modal(L.nome,`<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="pill ${stc}">${stl}</span><span class="muted" style="font-size:13px">Criado em ${dayLbl(L.data,true)} · ${L.rodadas} ${L.rodadas===1?"rodada":"rodadas"}${L.ops?` · ${L.ops.toLocaleString("pt-BR")} operações`:""}</span></div>
+  const L=S.C?.lots.get(id);if(!L)return closeModal();const [stl,stc]=ST[L.st];const admin=isAdmin();
+  modal(L.nome,`<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="pill ${stc}">${stl}</span><span class="muted" style="font-size:13px">${admin?esc(opName(L.op))+" · ":""}Criado em ${dayLbl(L.data,true)} · ${L.rodadas} ${L.rodadas===1?"rodada":"rodadas"}${L.ops?` · ${L.ops.toLocaleString("pt-BR")} operações`:""}</span></div>
     <div class="dstats"><div><span>Investido</span><b>${money(L.inv)}</b></div><div><span>Recolhido</span><b>${money(L.rec)}</b></div><div><span>Resultado</span><b class="${cls(L.res)}">${signed(L.res)}</b></div></div>
     ${L.prev?`<div class="notice">Ainda a recolher: <b class="num">${money(L.prev)}</b></div>`:""}
     ${L.obs?`<p class="muted" style="margin:0">${esc(L.obs)}</p>`:""}
     <div>${L.ents.map(e=>entRow(e,false)).join("")||`<p class="muted">Sem lançamentos.</p>`}</div>
-    <div class="sheet-f" style="justify-content:space-between"><button class="btn small danger" data-act="dellote" data-id="${esc(id)}">Excluir lote</button><button class="btn primary" data-act="lancar" data-id="${esc(id)}">Lançar neste lote</button></div>`);
+    <div class="sheet-f" style="justify-content:space-between">${admin?`<button class="btn small danger" data-act="dellote" data-id="${esc(id)}">Excluir lote</button>`:"<span></span>"}<button class="btn primary" data-act="lancar" data-id="${esc(id)}">Lançar neste lote</button></div>`);
 }
 
 /* ---------- ações ---------- */
@@ -615,44 +755,63 @@ const armed=new Map();
 function arm(btn,key,label,fn){if(armed.get(key)){armed.delete(key);fn();return}armed.set(key,1);const old=btn.textContent;btn.textContent=label;btn.classList.add("danger");setTimeout(()=>{armed.delete(key);if(btn.isConnected){btn.textContent=old;btn.classList.remove("danger")}},3500)}
 function exportCSV(){
   const n=v=>v==null||v===""?"":String(Math.round(Number(v)*100)/100).replace(".",",");
-  const rows=[["Data","Lote","Tipo","Qtd operações","Valor por operação","Valor","Situação","Observação"]];
-  const all=[...S.lanc.values()].sort((a,b)=>a.data<b.data?-1:a.data>b.data?1:(a.createdAt||0)-(b.createdAt||0));
-  for(const e of all){const L=S.lotes.get(e.loteId);const [y,m,d]=e.data.split("-");rows.push([`${d}/${m}/${y}`,L?L.nome:(e.loteId?"(lote excluído)":"Caixa"),{investimento:"Investimento",recolhimento:"Recolhimento",aporte:"Aporte",retirada:"Retirada"}[e.tipo]||e.tipo,e.qtd??"",n(e.valorOp),n(e.valor),e.status==="previsto"?"Previsto":"Realizado",e.obs||""])}
+  const rows=[["Data","Operador","Lote","Tipo","Qtd operações","Valor por operação","Valor","Situação","Observação"]];
+  const all=[...S.lanc.values()].filter(e=>S.view==="todos"||e.op===S.view).sort((a,b)=>a.data<b.data?-1:a.data>b.data?1:(a.createdAt||0)-(b.createdAt||0));
+  for(const e of all){const L=S.lotes.get(e.loteId);const [y,m,d]=e.data.split("-");rows.push([`${d}/${m}/${y}`,opName(e.op),L?L.nome:(e.loteId?"(lote excluído)":"Caixa"),{investimento:"Investimento",recolhimento:"Recolhimento",aporte:"Aporte",retirada:"Retirada"}[e.tipo]||e.tipo,e.qtd??"",n(e.valorOp),n(e.valor),e.status==="previsto"?"Previsto":"Realizado",e.obs||""])}
   const csv="﻿"+rows.map(r=>r.map(c=>{c=String(c??"");return /[;"\n]/.test(c)?'"'+c.replace(/"/g,'""')+'"':c}).join(";")).join("\r\n");
   const url=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
   const a=document.createElement("a");a.href=url;a.download=`controle-lotes-${todayISO()}.csv`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);
 }
+function setView(v){S.view=v;store.set("cl_view",v);render()}
 document.addEventListener("click",ev=>{
   const c=ev.target.closest("[data-close]");if(c&&(c===ev.target||c.tagName==="BUTTON")){closeModal();return}
+  const cp=ev.target.closest("[data-copy]");if(cp){const el=document.getElementById(cp.dataset.copy);el.select();const done=()=>{cp.textContent="Copiado";setTimeout(()=>{if(cp.isConnected)cp.textContent=cp.dataset.copy==="acc"?"Copiar mensagem":"Copiar"},1800)};
+    (navigator.clipboard?navigator.clipboard.writeText(el.value):Promise.reject()).then(done).catch(()=>{try{document.execCommand("copy");done()}catch(_){toast("Selecione o texto e copie")}});return}
+  if(ev.target.closest("[data-act=editop]")){openOperador(ev.target.closest("[data-act]").dataset.id);return}
+  const vo=ev.target.closest("[data-verop]");if(vo){setView(vo.dataset.verop);S.tab="lotes";render();window.scrollTo({top:0,behavior:"smooth"});return}
   const lote=ev.target.closest("[data-lote]");if(lote){openLote(lote.dataset.lote);return}
   const chip=ev.target.closest("[data-f]");if(chip){S.filter=chip.dataset.f;document.querySelectorAll("#chips .chip").forEach(b=>b.setAttribute("aria-pressed",String(b===chip)));render();return}
-  const tab=ev.target.closest("[data-tab]");if(tab){S.tab=tab.dataset.tab;document.querySelectorAll("[data-tab]").forEach(b=>b.setAttribute("aria-selected",String(b===tab)));$("#view-lotes").hidden=S.tab!=="lotes";$("#view-hist").hidden=S.tab!=="hist";render();return}
+  const tab=ev.target.closest("[data-tab]");if(tab){S.tab=tab.dataset.tab;render();return}
   const a=ev.target.closest("[data-act]");if(!a)return;const act=a.dataset.act,id=a.dataset.id;
   if(act==="novo")openNovo();
   else if(act==="lancar")openLancar(id);
   else if(act==="caixa")openCaixa();
   else if(act==="config")openConfig();
   else if(act==="export")exportCSV();
-  else if(act==="sync"){if(!CONN.url)return openConexao();toast("Atualizando…");refresh(false).then(()=>{if(S.loaded)toast("Atualizado às "+S.syncedAt)})}
-  else if(act==="reconectar")openConexao();
-  else if(act==="desconectar"){store.del("cl_url");store.del("cl_chave");CONN.url="";CONN.chave="";S.loaded=false;S.lotes=new Map();S.lanc=new Map();S.config=null;closeModal();render();toast("Aparelho desconectado")}
+  else if(act==="novoop")openOperador();
+  else if(act==="linkacesso")openLinkAcesso();
+  else if(act==="sair"){sair("Você saiu.")}
+  else if(act==="trocarlink"){store.del("cl_url");CONN.url="";S.temAdmin=null;S.authMsg="";render()}
+  else if(act==="sync"){toast("Atualizando…");refresh(false).then(()=>{if(S.loaded)toast("Atualizado às "+S.syncedAt)})}
   else if(act==="receber"){const e=S.lanc.get(id);if(!e)return;const t=todayISO();const inModal=!!$("#modal-root").innerHTML;write("receber",{id,data:e.data>t?t:e.data},"Marcado como recebido").then(ok=>{if(ok&&inModal&&e.loteId)openLote(e.loteId)})}
   else if(act==="del")arm(a,"del"+id,"Confirmar",()=>{const e=S.lanc.get(id);const inModal=!!$("#modal-root").innerHTML;write("excluirLancamento",{id},"Lançamento excluído").then(ok=>{if(ok&&inModal&&e?.loteId)openLote(e.loteId)})})
   else if(act==="dellote")arm(a,"dl"+id,"Confirmar exclusão do lote e lançamentos",async()=>{if(await write("excluirLote",{id},"Lote excluído"))closeModal()});
 });
+document.addEventListener("keydown",ev=>{if(ev.key==="Escape"&&$("#modal-root").innerHTML)closeModal();const tr=ev.target.closest?.("[data-verop]");if(tr&&ev.key==="Enter")tr.click()});
 document.addEventListener("submit",async ev=>{
-  if(ev.target.closest(".sheet"))return;
-  if(ev.target.id==="fc"){ev.preventDefault();await saveCapital(ev.target)}
-  else if(ev.target.id==="fx"){ev.preventDefault();await conectar(ev.target)}
+  const f=ev.target;if(!f.id||!f.id.startsWith("fa-"))return;ev.preventDefault();
+  const err=f.querySelector("#a-err"),btn=f.querySelector("button[type=submit]");const val=id=>(f.querySelector("#"+id)?.value||"").trim();
+  err.textContent="";
+  if(f.id==="fa-url"){const url=val("a-url");if(!/^https:\/\/script\.google(usercontent)?\.com\/.+\/exec$/.test(url))return err.textContent="Cole o link do app da Web. Ele começa com https://script.google.com e termina em /exec.";
+    CONN.url=url;store.set("cl_url",url);return checarStatus()}
+  const label=btn.textContent;btn.disabled=true;btn.textContent="Aguarde…";
+  try{
+    if(f.id==="fa-login"){if(!val("a-user")||!f.querySelector("#a-pass").value)throw new Error("Digite usuário e senha.");await api("login",{usuario:val("a-user"),senha:f.querySelector("#a-pass").value})}
+    else if(f.id==="fa-admin"){const s1=f.querySelector("#a-pass").value,s2=f.querySelector("#a-pass2").value;
+      if(!val("a-nome"))throw new Error("Informe o seu nome.");if(s1.length<6)throw new Error("A senha precisa ter pelo menos 6 caracteres.");if(s1!==s2)throw new Error("As senhas não conferem.");if(!val("a-chave"))throw new Error("Cole a chave da planilha.");
+      await api("criarAdmin",{nome:val("a-nome"),usuario:val("a-user"),senha:s1,chave:val("a-chave")})}
+    S.authMsg="";
+  }catch(e){if(err.isConnected)err.textContent=e.message}
+  finally{if(btn.isConnected){btn.disabled=false;btn.textContent=label}}
 });
-document.addEventListener("keydown",ev=>{if(ev.key==="Escape"&&$("#modal-root").innerHTML)closeModal()});
+$("#scope").addEventListener("change",ev=>setView(ev.target.value));
 $("#q").addEventListener("input",ev=>{S.q=ev.target.value;renderLotes(S.C||compute())});
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")refresh(true)});
 setInterval(()=>{if(document.visibilityState==="visible"&&!$("#modal-root").innerHTML)refresh(true)},60000);
 
 /* ---------- início ---------- */
-render();
-if(CONN.url&&CONN.chave)refresh(false);
+if(CONN.url&&CONN.token){S.temAdmin=true;render();api("listar").catch(e=>{if(e.codigo!=="sessao"){S.authMsg=e.message;render()}})}
+else checarStatus();
 })();
 </script>
 </body>
