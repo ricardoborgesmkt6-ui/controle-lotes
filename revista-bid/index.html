@@ -26,7 +26,7 @@ button:hover{background:rgba(227,194,122,.18)}button:disabled{opacity:.35;cursor
 #thumbs img{height:104px;display:block;border:2px solid transparent;margin-bottom:4px}
 #thumbs div.cur img{border-color:var(--gold)}
 .hint{position:absolute;top:60px;left:50%;transform:translateX(-50%);font-size:11px;color:#8D97A6;letter-spacing:.1em;transition:opacity .6s}
-@media(max-width:600px){.sub{display:none}button.wide{display:none}}
+@media(max-width:600px){.sub{display:none}button.wide{display:none}footer{gap:6px}button{padding:0 10px}}
 </style></head><body>
 <header><div class="brand">REVISTA <b>BID</b></div><div class="sub">Base Industrial de Defesa · 2026</div></header>
 <div class="hint" id="hint">Arraste o canto da página ou use as setas para folhear</div>
@@ -38,23 +38,33 @@ button:hover{background:rgba(227,194,122,.18)}button:disabled{opacity:.35;cursor
  <div id="count">1 / 23</div>
  <button id="next" title="Próxima">›</button>
  <button id="last" class="wide" title="Contracapa">⏭</button>
+ <button id="mode">2 páginas</button>
  <button id="grid">Páginas</button>
  <button id="fs" class="wide">Tela cheia</button>
 </footer>
 <script src="page-flip.browser.js"></script>
 <script>
-const N=23, book=document.getElementById('book');
-for(let i=1;i<=N;i++){const d=document.createElement('div');d.className='page';
- if(i===1||i===N) d.dataset.density='hard';
- d.innerHTML=`<img src="pages/p-${String(i).padStart(2,'0')}.jpg" alt="Página ${i}" loading="${i<5?'eager':'lazy'}">`;book.appendChild(d);}
+const N=23; let pf=null; let mode='auto';
+try{mode=localStorage.getItem('bidMode')||'auto';}catch(e){}
 function fit(){const m=document.querySelector('main').getBoundingClientRect();
- const portrait=m.width<760; const ratio=297/210;
- let h=m.height-28, w=h/ratio; const maxW=portrait?m.width-28:(m.width-28)/2;
- if(w>maxW){w=maxW;h=w*ratio;} return {w:Math.floor(w),h:Math.floor(h),portrait};}
-const f=fit();
-const pf=new St.PageFlip(book,{width:f.w,height:f.h,size:'fixed',showCover:true,usePortrait:true,
- maxShadowOpacity:.45,mobileScrollSupport:false,flippingTime:750,drawShadow:true});
-pf.loadFromHTML(document.querySelectorAll('#book .page'));
+ const two = mode==='duas' || (mode==='auto' && m.width>=760); const ratio=297/210;
+ let h=m.height-28, w=h/ratio; const maxW=two?(m.width-28)/2:m.width-28;
+ if(w>maxW){w=maxW;h=w*ratio;} return {w:Math.floor(w),h:Math.floor(h),two};}
+function build(start){
+ if(pf){try{pf.destroy();}catch(e){}}
+ const main=document.querySelector('main'); main.innerHTML='<div id="book"></div>';
+ const book=document.getElementById('book');
+ for(let i=1;i<=N;i++){const d=document.createElement('div');d.className='page';
+  if(i===1||i===N) d.dataset.density='hard';
+  d.innerHTML=`<img src="pages/p-${String(i).padStart(2,'0')}.jpg" alt="Página ${i}" loading="${i<5?'eager':'lazy'}">`;book.appendChild(d);}
+ const f=fit();
+ pf=new St.PageFlip(book,{width:f.w,height:f.h,size:'fixed',showCover:true,usePortrait:mode!=='duas',
+  maxShadowOpacity:.45,mobileScrollSupport:false,flippingTime:750,drawShadow:true});
+ pf.loadFromHTML(book.querySelectorAll('.page'));
+ pf.on('flip',upd); pf.on('changeOrientation',upd);
+ if(start) pf.turnToPage(start);
+ document.getElementById('mode').textContent = mode==='duas' ? '2 páginas ✓' : '2 páginas';
+ upd();}
 const count=document.getElementById('count');
 function upd(){const i=pf.getCurrentPageIndex(); const o=pf.getOrientation();
  let label=String(i+1); if(o==='landscape'&&i>0&&i<N-1){label=(i+1)+'–'+Math.min(i+2,N);}
@@ -63,10 +73,8 @@ function upd(){const i=pf.getCurrentPageIndex(); const o=pf.getOrientation();
  document.getElementById('next').disabled=i>=N-1||(o==='landscape'&&i>=N-2&&i!==0);
  document.querySelectorAll('#thumbs div').forEach((t,k)=>t.classList.toggle('cur',k===i||(o==='landscape'&&k===i+1&&i>0)));
  try{if(location.hash!=='#p'+(i+1)) history.replaceState(null,'','#p'+(i+1));}catch(e){}}
-pf.on('flip',upd); pf.on('changeOrientation',upd);
 document.getElementById('prev').onclick=()=>pf.flipPrev();
 document.getElementById('next').onclick=()=>pf.flipNext();
-document.getElementById('first').onclick=()=>pf.turnToPage(0)||upd();
 document.getElementById('last').onclick=()=>{pf.turnToPage(N-1);upd();};
 document.getElementById('first').onclick=()=>{pf.turnToPage(0);upd();};
 document.addEventListener('keydown',e=>{if(e.key==='ArrowRight')pf.flipNext(); if(e.key==='ArrowLeft')pf.flipPrev();});
@@ -76,8 +84,8 @@ for(let i=1;i<=N;i++){const t=document.createElement('div');
  t.onclick=()=>{pf.turnToPage(i-1);upd();th.classList.remove('on');};th.appendChild(t);}
 document.getElementById('grid').onclick=()=>{th.classList.toggle('on');const c=th.querySelector('.cur');if(c)c.scrollIntoView({inline:'center',block:'nearest'});};
 document.getElementById('fs').onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen();}catch(e){}};
-let rt;window.addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>{const s=fit();
- try{pf.getSettings().width=s.w;pf.getSettings().height=s.h;pf.update();}catch(e){} },200);});
-const m=/^#p(\d+)$/.exec(location.hash); if(m){const p=Math.min(N,Math.max(1,+m[1]));pf.turnToPage(p-1);}
-upd(); setTimeout(()=>document.getElementById('hint').style.opacity=0,4000);
+let rt;window.addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>build(pf.getCurrentPageIndex()),250);});
+document.getElementById('mode').onclick=()=>{mode = mode==='duas' ? 'auto' : 'duas';
+ try{localStorage.setItem('bidMode',mode);}catch(e){} build(pf.getCurrentPageIndex());};
+const m=/^#p(\d+)$/.exec(location.hash); build(m?Math.min(N,Math.max(1,+m[1]))-1:0); setTimeout(()=>document.getElementById('hint').style.opacity=0,4000);
 </script></body></html>
