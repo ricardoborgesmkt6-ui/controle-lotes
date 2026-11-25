@@ -95,3 +95,5 @@ table.tb tr:nth-child(odd) td{background:#F5F6F8}
 .toc .t{font:700 10pt/1.22 'MontserratL';color:#fff}
 .toc .a{font-size:8.2pt;color:#9AA4B2;margin-top:.6mm}
 .toc .th{width:34mm;height:16mm;flex:none}
+
+.hero.baked::before{display:none}
